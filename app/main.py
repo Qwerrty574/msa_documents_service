@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Depends
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from database import SessionLocal, engine
@@ -17,9 +18,14 @@ def get_db():
         db.close()
 
 
+class DocumentObj(BaseModel):
+    title: str
+    content: str
+
+
 @app.post("/documents/")
-async def create_document(title: str, content: str, db: Session = Depends(get_db)):
-    document = Document(title=title, content=content)
+async def create_document(doc: DocumentObj, db: Session = Depends(get_db)):
+    document = DocumentObj(title=doc.title, content=doc.content)
     db.add(document)
     db.commit()
     db.refresh(document)
