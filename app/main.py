@@ -1,16 +1,41 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
+from sqlalchemy.orm import Session
+
+from database import SessionLocal, engine
+from models import Base, Document
+
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
 
-@app.get("/")
-async def root():
-    return {"message": "Hello World"}
+def get_db():
+    try:
+        db = SessionLocal()
+        yield db
+    finally:
+        db.close()
 
 
-@app.get("/hello/{name}")
-async def say_hello(name: str):
-    return {"message": f"Hello {name}"}
+@app.post("/documents/")
+async def create_document(title: str, content: str, db: Session = Depends(get_db)):
+    document = Document(title=title, content=content)
+    db.add(document)
+    db.commit()
+    db.refresh(document)
+    return document
+
+
+@app.get("/documents/{document_id}")
+async def read_document(document_id: int, db: Session = Depends(get_db)):
+    document = db.query(Document).filter(Document.id == document_id).first()
+    return document
+
+
+@app.get("/documents/")
+async def read_documents(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    documents = db.query(Document).offset(skip).limit(limit).all()
+    return documents
 
 
 @app.get("/__health")
