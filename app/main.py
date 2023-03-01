@@ -25,7 +25,7 @@ class DocumentObj(BaseModel):
 
 @app.post("/documents/")
 async def create_document(doc: DocumentObj, db: Session = Depends(get_db)):
-    document = DocumentObj(title=doc.title, content=doc.content)
+    document = Document(title=doc.title, content=doc.content)
     db.add(document)
     db.commit()
     db.refresh(document)
