@@ -1,7 +1,8 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, HTTPException
 from opentelemetry import trace
 from opentelemetry.exporter.jaeger.thrift import JaegerExporter
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+from opentelemetry.instrumentation.sqlalchemy import SQLAlchemyInstrumentor
 from opentelemetry.sdk.resources import SERVICE_NAME, Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
@@ -28,6 +29,8 @@ provider = TracerProvider(resource=resource)
 processor = BatchSpanProcessor(jaeger_exporter)
 provider.add_span_processor(processor)
 trace.set_tracer_provider(provider)
+
+SQLAlchemyInstrumentor().instrument()
 
 FastAPIInstrumentor.instrument_app(app)
 
@@ -57,6 +60,8 @@ async def create_document(doc: DocumentObj, db: Session = Depends(get_db)):
 @app.get("/documents/{document_id}")
 async def read_document(document_id: int, db: Session = Depends(get_db)):
     document = db.query(Document).filter(Document.id == document_id).first()
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found")
     return document
 
 
