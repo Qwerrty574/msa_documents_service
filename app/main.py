@@ -6,6 +6,7 @@ from opentelemetry.instrumentation.sqlalchemy import SQLAlchemyInstrumentor
 from opentelemetry.sdk.resources import SERVICE_NAME, Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from prometheus_fastapi_instrumentator import Instrumentator
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -33,6 +34,8 @@ trace.set_tracer_provider(provider)
 SQLAlchemyInstrumentor().instrument()
 
 FastAPIInstrumentor.instrument_app(app)
+
+Instrumentator().instrument(app).expose(app)
 
 
 def get_db():
